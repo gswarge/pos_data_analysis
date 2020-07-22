@@ -1,0 +1,96 @@
+---
+title: "Cafe Great dataset analysis"
+author: "Gaurang Swarge"
+date: "7/10/2018"
+output: html_document
+---
+
+```{r setup}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/', echo=FALSE, warning=FALSE, message=FALSE)
+
+options(width = 100)
+
+library(plyr)
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(DT)
+library(scales)
+library(knitr)
+library(plotly)
+library(arules)
+library(arulesViz)
+library(visNetwork)
+library(igraph)
+library(kableExtra)
+library(tidyverse)
+library("RColorBrewer")
+
+#Reading all the Datasets
+orders <- fread("Cafe Great Transaction Data set.csv")
+orders$`Item Desc` <- as.factor(orders$`Item Desc`)
+orders$Category <- as.factor(orders$Category)
+orders$date <- as.Date(as.character(orders$date),format="%dd-%mmm-%yy")
+head(orders)
+```
+
+### Price Analysis
+```{r PriceAnalysis}
+summary(orders)
+
+temp <- orders %>%
+  filter(orders)
+
+```
+
+## Association Rules
+
+```{r AssociationRules}
+
+
+data1 <- split(orders$`Item Desc`,orders$`Bill Number`)
+
+head(data1,25)
+
+#converting to class transactions
+total_transactions<-as(data1,"transactions")
+dim(total_transactions)
+inspect(total_transactions[1:2])
+
+# calculates support for frequent items
+frequentItems <- eclat (total_transactions, parameter = list(supp = 0.01, maxlen = 15)) 
+inspect(frequentItems)
+
+#frequent Items in the transactions
+itemFrequencyPlot(total_transactions,topN=30,type="absolute")
+
+#Running the Apriori algorithm
+basket_rules <- apriori(total_transactions, parameter = list(support = 0.001, confidence = 0.10, minlen=2,maxlen=10,target = "rules"))
+basket_rules
+
+#Removing Redundent Rules (rules that are subset of larger rules)
+# get subset rules in vector
+subsetRules <- which(colSums(is.subset(basket_rules, basket_rules)) > 1) 
+length(subsetRules) 
+# remove subset rules 
+basket_rules <- basket_rules[-subsetRules]
+basket_rules
+# 'high-confidence' rules.
+basket_rules_conf <- sort (basket_rules, by="confidence", decreasing=TRUE) 
+
+# show the support, lift and confidence for all rules
+inspect(head(basket_rules_conf)) 
+
+# High-Lift Rules
+basket_rules_lift <- sort (basket_rules, by="lift", decreasing=TRUE) 
+
+# show the support, lift and confidence for all rules
+inspect(head(basket_rules_lift)) 
+
+plot(basket_rules,control=list(col=brewer.pal(11,"Spectral")),main="")
+plot(basket_rules, method = "graph")
+plotly_arules(basket_rules)
+inspectDT(basket_rules)
+
+```
