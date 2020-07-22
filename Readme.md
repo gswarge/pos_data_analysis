@@ -10,4 +10,4 @@ Data is collected from a café run by business students at a Midwestern public u
 Tableau & R
 
 ## Results:
-![]('plots/13 Sales Trend Monthwise.png')
+![]("plots/13 Sales Trend Monthwise.png")
